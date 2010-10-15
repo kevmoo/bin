@@ -14,9 +14,9 @@ def git(command, swallow_errors = false)
   return `git #{command}`
 end
 
-def branch_from_dir(dir_path, branch_name)
-  # get the tree for common
-  output = git("ls-tree -d master #{dir_path}")
+def branch_from_dir(dir_path, branch_name, master = 'master')
+  # get the tree for dir_path
+  output = git("ls-tree -d #{master} #{dir_path}")
   dir_sha = output.split(' ')[2]
 
   command = "commit-tree #{dir_sha}"
@@ -49,7 +49,7 @@ def branch_from_dir(dir_path, branch_name)
     verb = 'created'
   end
 
-  master_commit = git("rev-parse master")[0..7]
+  master_commit = git("rev-parse #{master}")[0..7]
   File.open(TMP_MESSAGE_PATH, 'w') do |f|
     f.puts "Contents of #{dir_path} from commit #{master_commit}"
   end
