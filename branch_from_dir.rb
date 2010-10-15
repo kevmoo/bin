@@ -2,24 +2,36 @@
 
 TMP_MESSAGE_PATH = '/tmp/message'
 
+def git(command, swallow_errors = false)
+  if(swallow_errors)
+    # 2>&1 is magic and confused me forever
+    # Read this: http://www.xaprb.com/blog/2006/06/06/what-does-devnull-21-mean/
+    # 2 is STDERR, 1 is STDOUT
+    # pipes STDERR to STDOUT. That's it.
+    # Keeps ruby from displaying error text when a shell command errors
+    command = command + ' 2>&1'
+  end
+  return `git #{command}`
+end
+
 def branch_from_dir(dir_path, branch_name)
   # get the tree for common
-  output = `git ls-tree -d master #{dir_path}`
+  output = git("ls-tree -d master #{dir_path}")
   dir_sha = output.split(' ')[2]
 
-  command = "git commit-tree #{dir_sha}"
+  command = "commit-tree #{dir_sha}"
 
   #
   # See if there is an existing branch
   #
   branch_name_ref = "refs/heads/#{branch_name}"
-  parent = `git rev-parse --verify #{branch_name_ref} 2>&1`.strip
+  parent = git("rev-parse --verify #{branch_name_ref}", true).strip
 
   if $?.to_i == 0
     #
     # There is an existing branch
     #
-    commit_items = `git cat-file -p #{parent}`.split(' ')
+    commit_items = git("cat-file -p #{parent}").split(' ')
     raise 'should be tree' if commit_items[0] != 'tree'
     parent_tree = commit_items[1]
 
@@ -37,16 +49,16 @@ def branch_from_dir(dir_path, branch_name)
     verb = 'created'
   end
 
-  master_commit = `git rev-parse master`[0..7]
+  master_commit = git("rev-parse master")[0..7]
   File.open(TMP_MESSAGE_PATH, 'w') do |f|
     f.puts "Contents of #{dir_path} from commit #{master_commit}"
   end
 
   command << " < #{TMP_MESSAGE_PATH}"
 
-  output = `#{command}`
+  output = git(command)
   puts "Created new commit: #{output}"
-  `git update-ref #{branch_name_ref} #{output}`
+  git("update-ref #{branch_name_ref} #{output}")
   puts "Branch '#{branch_name}' #{verb}"
 end
 
