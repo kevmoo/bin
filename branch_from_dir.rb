@@ -17,6 +17,10 @@ end
 def branch_from_dir(dir_path, branch_name, master = 'master')
   # get the tree for dir_path
   output = git("ls-tree -d #{master} #{dir_path}")
+  if output.length == 0
+    puts "Could not find tree for dir_path: #{dir_path}"
+    return
+  end
   dir_sha = output.split(' ')[2]
 
   command = "commit-tree #{dir_sha}"
