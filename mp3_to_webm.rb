@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 def process(mp3)
-  name = mp3.match /\A(\w+)(\.mp\d)\z/
+  name = File.basename(mp3)
   raise 'weird' unless name
   root = name[1]
   
